@@ -1,0 +1,7 @@
+import { NextRequest,NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { isValidSession } from '../../../lib/auth';
+import { db } from '../../../lib/supabase';
+export async function GET(){try{const {data,error}=await db().from('projects').select('id,title,description,category,images,created_at').order('created_at',{ascending:false});if(error)throw error;return NextResponse.json(data||[])}catch(e:any){return NextResponse.json({error:e.message||'Unable to load projects'},{status:500})}}
+export async function POST(req:NextRequest){const c=await cookies();if(!isValidSession(c.get('ng_admin_session')?.value))return NextResponse.json({error:'Unauthorized'},{status:401});try{const body=await req.json();const {data,error}=await db().from('projects').insert({title:body.title,description:body.description||'',category:body.category,images:body.images||[]}).select().single();if(error)throw error;return NextResponse.json(data)}catch(e:any){return NextResponse.json({error:e.message||'Unable to create project'},{status:500})}}
+export async function DELETE(req:NextRequest){const c=await cookies();if(!isValidSession(c.get('ng_admin_session')?.value))return NextResponse.json({error:'Unauthorized'},{status:401});try{const {id}=await req.json();const {error}=await db().from('projects').delete().eq('id',id);if(error)throw error;return NextResponse.json({ok:true})}catch(e:any){return NextResponse.json({error:e.message||'Unable to delete project'},{status:500})}}
